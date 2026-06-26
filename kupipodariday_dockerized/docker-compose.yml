@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  database:
+    image: postgres:13-alpine
+    container_name: kupipodariday-database
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PGDATA: ${PGDATA}
+    volumes:
+      - postgres_data:${PGDATA}
+    networks:
+      - kupipodariday-network
+
+  backend:
+    container_name: kupipodariday-backend
+    restart: unless-stopped
+    build:
+      context: ./backend
+    env_file:
+      - .env
+    environment:
+      PORT: 3000
+      POSTGRES_HOST: database
+    ports:
+      - '4000:3000'
+    depends_on:
+      - database
+    networks:
+      - kupipodariday-network
+
+  frontend:
+    container_name: kupipodariday-frontend
+    restart: unless-stopped
+    build:
+      context: ./frontend
+      args:
+        REACT_APP_API_URL: ${FRONTEND_API_URL}
+    ports:
+      - '8081:80'
+    depends_on:
+      - backend
+    networks:
+      - kupipodariday-network
+
+volumes:
+  postgres_data:
+
+networks:
+  kupipodariday-network:
+    driver: bridge
